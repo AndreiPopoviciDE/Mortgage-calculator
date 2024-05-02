@@ -1,99 +1,101 @@
 import React, { useState } from 'react';
+import Button from '../UI/Button';
+import styles from './Main.module.css';
+import { calculateMonthlyPayment } from '../utils/helpers.js';
 
 const Main = () => {
   const [data, setData] = useState({
     loanAmount: '',
     interestRate: '',
-    lenghtLoan: '',
+    lengthLoan: '',
     mortagePayment: '',
   });
+  const [warnings, setWarnings] = useState({});
+
+  const requiredFields = ['loanAmount', 'interestRate', 'lengthLoan'];
+
+  const isSubmitDisabled =
+    requiredFields.some((key) => data[key].trim() === '') ||
+    Object.values(warnings).some((warning) => warning !== '');
 
   function handleFormSubmit(e) {
     e.preventDefault();
-    console.log(data);
+
     setData({
-      ...data,
       mortagePayment: calculateMonthlyPayment(
-        data.lenghtLoan,
+        data.loanAmount,
         data.interestRate,
-        data.lenghtLoan
+        data.lengthLoan
       ),
+      loanAmount: data.loanAmount,
+      interestRate: data.interestRate,
+      lengthLoan: data.lengthLoan,
     });
-    console.log(
-      calculateMonthlyPayment(
-        data.lenghtLoan,
-        data.interestRate,
-        data.lenghtLoan
-      )
-    );
-    setData({ loanAmount: '', interestRate: '', lenghtLoan: '' });
   }
 
   function handleInputChange(e, name) {
-    setData({ ...data, [name]: e.target.value });
-  }
+    setData({ ...data, [name]: e.target.value.trim() });
 
-  function calculateMonthlyPayment(
-    principal,
-    annualInterestRate,
-    numberOfPayments
-  ) {
-    // Convert annual interest rate to decimal form
-    let monthlyInterestRate = annualInterestRate / 100 / 12;
-
-    // Calculate the denominator part of the formula
-    let denominator = Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1;
-
-    // Calculate the monthly payment
-    let monthlyPayment =
-      (principal *
-        (monthlyInterestRate *
-          Math.pow(1 + monthlyInterestRate, numberOfPayments))) /
-      denominator;
-
-    return monthlyPayment;
+    if (!/^\d*\.?\d*$/.test(e.target.value.trim())) {
+      setWarnings({ ...warnings, [name]: 'Please enter only numbers.' });
+    } else {
+      setWarnings({ ...warnings, [name]: '' });
+    }
   }
 
   return (
     <>
-      <div className="container">
-        <form onSubmit={handleFormSubmit}>
-          <label>
+      <div>
+        <form onSubmit={handleFormSubmit} className={styles.form}>
+          <label className={styles.input}>
             Principal loan amount
+            <br />
             <input
+              className={styles.input}
               required
               type="text"
               value={data.loanAmount}
               onChange={(e) => handleInputChange(e, 'loanAmount')}
             ></input>
-            <br />
+            <p className={styles.warnings}>{warnings.loanAmount}</p>
           </label>
+
           <label>
-            Interest Rate
+            Interest rate
+            <br />
             <input
+              className={styles.input}
               required
               type="text"
               value={data.interestRate}
               onChange={(e) => handleInputChange(e, 'interestRate')}
             ></input>
-            <span>%</span>
-            <br />
+            <span> %</span>
+            <p className={styles.warnings}>{warnings.interestRate}</p>
           </label>
           <label>
             Length of loan
+            <br />
             <input
+              className={styles.input}
               required
               type="text"
-              value={data.lenghtLoan}
-              onChange={(e) => handleInputChange(e, 'lenghtLoan')}
+              value={data.lengthLoan}
+              onChange={(e) => handleInputChange(e, 'lengthLoan')}
             ></input>
-            <br />
+            <span> Years</span>
+            <p className={styles.warnings}>{warnings.lengthLoan}</p>
           </label>
-          <br />
-          <button type="submit">Calculate</button>
+          <div>
+            <Button
+              type="submit"
+              title="Calculate"
+              disabled={isSubmitDisabled}
+            />
+            <p>Your monthly mortgage payment will be ${data.mortagePayment}</p>
+          </div>
         </form>
       </div>
-      <h2>Your monthly mortage payment will be {data.mortagePayment}</h2>
     </>
   );
 };
